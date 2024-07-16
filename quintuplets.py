@@ -1,0 +1,93 @@
+from dataclasses import dataclass
+import json
+import os
+from diffusers import DiffusionPipeline
+import torch
+from quintuplet_prompts_claude import QUINUPLETS_RAW
+from PIL import Image
+from tqdm import tqdm
+
+
+@dataclass
+class Quadruplet:
+    query: str
+    positive: str
+    negative: str
+    prompt: str
+
+
+@dataclass
+class Quintuplet:
+    anchor_image: Image.Image
+    gamma_image: Image.Image
+    delta_image: Image.Image
+
+    anchor_gamma_shared_text: str
+    anchor_delta_shared_text: str
+    raw_data: dict
+
+    @staticmethod
+    def get_dp_path(dataset_path: str, dp_id: str):
+        return os.path.join(dataset_path, dp_id)
+
+    def save(self, dataset_path: str, dp_id: str):
+        dp_path = self.get_dp_path(dataset_path, dp_id)
+        os.mkdir(dp_path)
+        self.anchor_image.save(os.path.join(dp_path, "anchor.jpg"), format="JPEG")
+        self.gamma_image.save(os.path.join(dp_path, "gamma.jpg"), format="JPEG")
+        self.delta_image.save(os.path.join(dp_path, "delta.jpg"), format="JPEG")
+
+        data = {
+            'anchor_gamma_shared_text': self.anchor_gamma_shared_text,
+            'anchor_delta_shared_text': self.anchor_delta_shared_text,
+            'raw_data': self.raw_data
+        }
+        json_path = os.path.join(dp_path, "data.json")
+        with open(json_path, 'w') as file:
+            json.dump(data, file, indent=4)
+
+    @classmethod
+    def load(cls, dataset_path: str, dp_id: str):
+        dp_path = cls.get_dp_path(dataset_path, dp_id)
+        anchor_image = Image.open(os.path.join(dp_path, "anchor.jpg"))
+        gamma_image = Image.open(os.path.join(dp_path, "gamma.jpg"))
+        delta_image = Image.open(os.path.join(dp_path, "delta.jpg"))
+
+        json_path = os.path.join(dp_path, "data.json")
+        with open(json_path, 'r') as file:
+            data = json.load(file)
+        return cls(
+            anchor_image=anchor_image,
+            gamma_image=gamma_image,
+            delta_image=delta_image,
+            anchor_gamma_shared_text=data['anchor_gamma_shared_text'],
+            anchor_delta_shared_text=data['anchor_delta_shared_text'],
+            raw_data=data
+        )
+
+    def get_quadruplet(self, which: str) -> Quadruplet:
+        if which == 'gamma_positive':
+            return Quadruplet(self.anchor_image, self.gamma_image, self.delta_image, self.anchor_gamma_shared_text)
+        elif which == 'delta_positive':
+            return Quadruplet(self.anchor_image, self.delta_image, self.gamma_image, self.anchor_delta_shared_text)
+        else:
+            raise ValueError()
+        
+
+def generate_quintuplets():
+    output_dir_path = '/home/dcor/roeyron/datasets/quintuplets_v1'
+    os.mkdir(output_dir_path)
+    pipe = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+    pipe.to("cuda")
+
+    for q_ind, q in tqdm(enumerate(QUINUPLETS_RAW), desc='Generating Quintuplets'):
+        image_anchor = pipe(q['anchor'], target_size=(512, 512)).images[0]
+        image_gamma = pipe(q['gamma'], target_size=(512, 512)).images[0]
+        image_delta = pipe(q['delta'], target_size=(512, 512)).images[0]
+
+        dp_id = f"{q_ind:03d}"
+        Quintuplet(image_anchor, image_gamma, image_delta, q['anchor-gamma'], q['anchor-delta'], q).save(output_dir_path, dp_id)
+
+
+if __name__ == "__main__":
+    generate_quintuplets()
