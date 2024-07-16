@@ -7,7 +7,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 def get_animals_data_df(data_path=None, limit_per_class=10):
     data_path = (
-        data_path or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/nlp_project/animals10/raw-img/"
+        data_path
+        or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/nlp_project/animals10/raw-img/"
     )
     translate = {
         "cane": "dog",
@@ -33,13 +34,18 @@ def get_animals_data_df(data_path=None, limit_per_class=10):
 
 
 def get_celeba_data_df(data_path=None, limit=200):
-    dataset_path = data_path or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/celeba-dataset"
+    dataset_path = (
+        data_path
+        or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/celeba-dataset"
+    )
     eval_path = os.path.join(dataset_path, "list_attr_celeba.csv")
     df = pd.read_csv(eval_path)
     if limit:
         df = df.sample(limit, random_state=42)
     df["image_path"] = df.image_id.apply(
-        lambda image_id: os.path.join(dataset_path, "img_align_celeba/img_align_celeba/", image_id)
+        lambda image_id: os.path.join(
+            dataset_path, "img_align_celeba/img_align_celeba/", image_id
+        )
     )
     df = df[list(df.columns[-1:]) + list(df.columns[:-1])]
     df = df.applymap(lambda x: {-1: False, 1: True}.get(x, x))
@@ -65,9 +71,12 @@ def add_text_to_image(image, text, font_size=30):
     text_y = 10  # Margin from the top edge
 
     # Draw white background rectangle for the text
-    draw.rectangle([text_x, text_y, text_x + text_width, text_y + text_height * 1.4], fill=(255, 255, 255, 10))
+    draw.rectangle(
+        [text_x, text_y, text_x + text_width, text_y + text_height * 1.4],
+        fill=(255, 255, 255, 10),
+    )
 
     # Add text to image
-    draw.text((text_x, text_y), text, fill='black', font=font)
+    draw.text((text_x, text_y), text, fill="black", font=font)
 
     return image
