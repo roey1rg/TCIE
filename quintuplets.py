@@ -10,15 +10,28 @@ import numpy as np
 from nlp_utils import add_text_to_image
 from IPython.display import display
 
+
+QUINTUPLETS_DATASET_PATH = '/home/dcor/roeyron/datasets/quintuplets_v1'
+
+
 @dataclass
 class Quadruplet:
-    query: str
-    positive: str
-    negative: str
+    query: Image.Image
+    positive: Image.Image
+    negative: Image.Image
     prompt: str
 
 
-DATASET_PATH = '/home/dcor/roeyron/datasets/quintuplets_v1'
+@dataclass
+class QuadrupletId:
+    quintuplet_id: str
+    which: str
+
+
+def load_quadruplet(qn_dataset_path: str, qd_id: QuadrupletId) -> Quadruplet:
+    qn = Quintuplet.load(qn_dataset_path, qd_id.quintuplet_id)
+    qd = qn.get_quadruplet(qd_id.which)
+    return qd
 
 @dataclass
 class Quintuplet:
@@ -89,19 +102,19 @@ class Quintuplet:
         
 
 def get_splits_ids():
-    all_ids = sorted(os.listdir(DATASET_PATH))[:50]
+    all_ids = sorted(os.listdir(QUINTUPLETS_DATASET_PATH))
     return {'train': all_ids[50:], 'test': all_ids[:50]}
 
 
-def visualize_quintuplet(qp: Quintuplet):
-    images = [qp.gamma_image, qp.anchor_image, qp.delta_image]
+def visualize_quintuplet(qn: Quintuplet):
+    images = [qn.gamma_image, qn.anchor_image, qn.delta_image]
     images = [img.resize((512, 512)) for img in images]
-    rd = qp.raw_data['raw_data']
+    rd = qn.raw_data['raw_data']
     texts = [rd['gamma'], rd['anchor'], rd['delta']]
     images = [add_text_to_image(img, txt, font_size=22) for img, txt in zip(images, texts)]
     img = Image.fromarray(np.concatenate(images, axis=1))
-    img = add_text_to_image(img, qp.anchor_gamma_shared_text, vertical_position='bottom', horizontal_position=1/3, alignment='center', font_size=18)
-    img = add_text_to_image(img, qp.anchor_delta_shared_text, vertical_position='bottom', horizontal_position=2/3, alignment='center', font_size=18)
+    img = add_text_to_image(img, qn.anchor_gamma_shared_text, vertical_position='bottom', horizontal_position=1/3, alignment='center', font_size=18)
+    img = add_text_to_image(img, qn.anchor_delta_shared_text, vertical_position='bottom', horizontal_position=2/3, alignment='center', font_size=18)
     display(img)
 
 
