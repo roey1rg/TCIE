@@ -59,24 +59,65 @@ def get_cache_dir() -> str:
     return f"/home/joberant/NLP_2324/{user}/.cache/"
 
 
-def add_text_to_image(image, text, font_size=30):
+def add_text_to_image(
+    image,
+    text,
+    font_size=30,
+    box_alpha=128,
+    vertical_position="top",
+    horizontal_position=0,
+    alignment="left",
+):
+    # Ensure the image has an alpha channel
+    if image.mode != "RGBA":
+        image = image.convert("RGBA")
+
     draw = ImageDraw.Draw(image)
     # Load a font
     font = ImageFont.truetype("arial.ttf", font_size)
-    # Calculate text size and position for upper-left corner
+    # Calculate text size
     text_bbox = draw.textbbox((0, 0), text, font=font)
     text_width = text_bbox[2] - text_bbox[0]
     text_height = text_bbox[3] - text_bbox[1]
-    text_x = 10  # Margin from the left edge
-    text_y = 10  # Margin from the top edge
 
-    # Draw white background rectangle for the text
-    draw.rectangle(
+    # Set margins
+    margin_x = 10
+    margin_y = 10
+
+    # Calculate vertical position
+    if vertical_position.lower() == "bottom":
+        text_y = image.height - text_height - margin_y
+    else:  # Default to top
+        text_y = margin_y
+
+    # Calculate horizontal position
+    image_width = image.width
+    text_x = int(horizontal_position * image_width)
+
+    if alignment.lower() == "center":
+        text_x -= text_width // 2
+    elif alignment.lower() == "right":
+        text_x -= text_width
+    # 'left' alignment doesn't need adjustment
+
+    # Ensure text stays within image bounds
+    text_x = max(margin_x, min(text_x, image_width - text_width - margin_x))
+
+    # Create a new image for the semi-transparent background
+    background = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    bg_draw = ImageDraw.Draw(background)
+
+    # Draw semi-transparent white background rectangle for the text
+    bg_draw.rectangle(
         [text_x, text_y, text_x + text_width, text_y + text_height * 1.4],
-        fill=(255, 255, 255, 10),
+        fill=(255, 255, 255, box_alpha),
     )
 
+    # Composite the background onto the original image
+    image = Image.alpha_composite(image, background)
+
     # Add text to image
+    draw = ImageDraw.Draw(image)
     draw.text((text_x, text_y), text, fill="black", font=font)
 
     return image

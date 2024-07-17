@@ -6,7 +6,9 @@ import torch
 from quintuplet_prompts_claude import QUINUPLETS_RAW
 from PIL import Image
 from tqdm import tqdm
-
+import numpy as np
+from nlp_utils import add_text_to_image
+from IPython.display import display
 
 @dataclass
 class Quadruplet:
@@ -82,6 +84,18 @@ class Quintuplet:
             )
         else:
             raise ValueError()
+
+
+def visualize_quintuplet(qp: Quintuplet):
+    images = [qp.gamma_image, qp.anchor_image, qp.delta_image]
+    images = [img.resize((512, 512)) for img in images]
+    rd = qp.raw_data['raw_data']
+    texts = [rd['gamma'], rd['anchor'], rd['delta']]
+    images = [add_text_to_image(img, txt, font_size=25) for img, txt in zip(images, texts)]
+    img = Image.fromarray(np.concatenate(images, axis=1))
+    img = add_text_to_image(img, qp.anchor_gamma_shared_text, vertical_position='bottom', horizontal_position=1/3, alignment='center', font_size=18)
+    img = add_text_to_image(img, qp.anchor_delta_shared_text, vertical_position='bottom', horizontal_position=2/3, alignment='center', font_size=18)
+    display(img)
 
 
 def generate_quintuplets():
