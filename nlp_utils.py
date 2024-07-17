@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import getpass
 from PIL import Image, ImageDraw, ImageFont
+import textwrap
 
 
 def get_animals_data_df(data_path=None, limit_per_class=10):
@@ -59,6 +60,10 @@ def get_cache_dir() -> str:
     return f"/home/joberant/NLP_2324/{user}/.cache/"
 
 
+def wrap(s, max_width):
+    return '\n'.join(textwrap.wrap(s, max_width))
+
+
 def add_text_to_image(
     image,
     text,
@@ -67,7 +72,10 @@ def add_text_to_image(
     vertical_position="top",
     horizontal_position=0,
     alignment="left",
+    wrap_text_width=40
 ):
+    if wrap_text_width is not None:
+        text = wrap(text, wrap_text_width)
     # Ensure the image has an alpha channel
     if image.mode != "RGBA":
         image = image.convert("RGBA")
