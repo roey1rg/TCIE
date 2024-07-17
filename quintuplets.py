@@ -18,6 +18,8 @@ class Quadruplet:
     prompt: str
 
 
+DATASET_PATH = '/home/dcor/roeyron/datasets/quintuplets_v1'
+
 @dataclass
 class Quintuplet:
     anchor_image: Image.Image
@@ -84,6 +86,11 @@ class Quintuplet:
             )
         else:
             raise ValueError()
+        
+
+def get_splits_ids():
+    all_ids = sorted(os.listdir(DATASET_PATH))[:50]
+    return {'train': all_ids[50:], 'test': all_ids[:50]}
 
 
 def visualize_quintuplet(qp: Quintuplet):
