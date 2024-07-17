@@ -4,7 +4,8 @@ import pandas as pd
 import getpass
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
-
+import numpy as np
+import matplotlib as mpl
 
 def get_animals_data_df(data_path=None, limit_per_class=10):
     data_path = (
@@ -68,7 +69,7 @@ def add_text_to_image(
     image,
     text,
     font_size=30,
-    box_alpha=128,
+    box_alpha=165,
     vertical_position="top",
     horizontal_position=0,
     alignment="left",
@@ -129,3 +130,26 @@ def add_text_to_image(
     draw.text((text_x, text_y), text, fill="black", font=font)
 
     return image
+
+
+def get_cos_sim(a, b):
+    a = a.astype('float32')
+    b = b.astype('float32')
+    cos_sim = np.dot(a, b)/(np.linalg.norm(a)*np.linalg.norm(b))
+    assert np.isnan(cos_sim).sum() == 0
+    return cos_sim
+
+
+def set_default_figure_params():
+    params = {
+        'axes.labelsize': 12,
+        'font.size': 12,
+        'legend.fontsize': 12,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10,
+        'text.usetex': False,
+        'figure.figsize': [5.5, 5.5],
+        'figure.dpi': 200
+
+    }
+    mpl.rcParams.update(params)

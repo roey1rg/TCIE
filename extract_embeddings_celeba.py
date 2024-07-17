@@ -86,6 +86,7 @@ def main(n_parts, part, output_dir_path):
                 out_file_path = os.path.join(output_dir_path, f"qind_{q_ind:02d}_chunk_{chunk_ind:02d}.pickle")
                 with open(out_file_path, "wb") as f:
                     pickle.dump(df_inference, f)
+                print(f'saved: {out_file_path}')
                 ddl_inference = defaultdict(list)
                 chunk_ind += 1
 

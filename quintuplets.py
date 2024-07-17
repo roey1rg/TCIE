@@ -33,8 +33,12 @@ def load_quadruplet(qn_dataset_path: str, qd_id: QuadrupletId) -> Quadruplet:
     qd = qn.get_quadruplet(qd_id.which)
     return qd
 
+
 @dataclass
 class Quintuplet:
+    """
+    QARD - Quintuplet Attribute Relationships Dataset
+    """
     anchor_image: Image.Image
     gamma_image: Image.Image
     delta_image: Image.Image
@@ -115,6 +119,28 @@ def visualize_quintuplet(qn: Quintuplet):
     img = Image.fromarray(np.concatenate(images, axis=1))
     img = add_text_to_image(img, qn.anchor_gamma_shared_text, vertical_position='bottom', horizontal_position=1/3, alignment='center', font_size=18)
     img = add_text_to_image(img, qn.anchor_delta_shared_text, vertical_position='bottom', horizontal_position=2/3, alignment='center', font_size=18)
+    display(img)
+
+
+def visualize_quadruplet(dataset_path, qd_id: QuadrupletId):
+    qn = Quintuplet.load(dataset_path, qd_id.quintuplet_id)
+    qd = qn.get_quadruplet(qd_id.which)
+    images = [qd.query, qd.positive, qd.negative]
+    images = [img.resize((512, 512)) for img in images]
+    rd = qn.raw_data['raw_data']
+    rd = qn.raw_data['raw_data']
+    q_prompt = rd['anchor']
+    if qd_id.which == 'gamma_positive':
+        p_prompt = rd['gamma']
+        n_prompt = rd['delta']
+    else:
+        p_prompt = rd['delta']
+        n_prompt = rd['gamma']
+    texts = [f'query\n"{q_prompt}"', f'positive\n"{p_prompt}"', f'negative\n"{n_prompt}"']
+    images = [add_text_to_image(img, txt, font_size=22, wrap_text_width=None) for img, txt in zip(images, texts)]
+    img = Image.fromarray(np.concatenate(images, axis=1))
+    question = qn.anchor_gamma_shared_text if qd_id.which == 'gamma_positive' else qn.anchor_delta_shared_text
+    img = add_text_to_image(img, question, vertical_position='bottom', horizontal_position=1/6, alignment='center', font_size=18)
     display(img)
 
 
