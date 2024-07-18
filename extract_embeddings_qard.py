@@ -1,4 +1,3 @@
-import torch
 from PIL import Image
 import numpy as np
 from collections import defaultdict
@@ -7,25 +6,12 @@ import pandas as pd
 from tqdm.auto import tqdm
 import pickle
 import argparse
-from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
-import nlp_utils  # our utils
+from nlp_utils import load_model
 from quintuplets import get_splits_ids, QuadrupletId, QUINTUPLETS_DATASET_PATH, load_quadruplet
 
 
-DEVICE = "cuda"
 CHUNKS_SIZE = 5
-
-
-def load_model():
-    cache_dir = nlp_utils.get_cache_dir()
-    model_name = "llava-hf/llava-v1.6-mistral-7b-hf"
-    processor = LlavaNextProcessor.from_pretrained(model_name, cache_dir=cache_dir)
-    model = LlavaNextForConditionalGeneration.from_pretrained(
-        model_name, torch_dtype=torch.float16, cache_dir=cache_dir
-    )
-    model.generation_config.pad_token_id = processor.tokenizer.pad_token_id
-    model = model.to(DEVICE)
-    return processor, model
+DEVICE = 'cuda'
 
 
 def get_reduced_hidden_states_to_store(hidden_states, n_input_tokens):
@@ -85,7 +71,6 @@ def extract_embeddings(n_parts, part, output_dir_path):
             print(f'saved: {out_file_path}')
             ddl_inference = defaultdict(list)
             chunk_id += 1
-
 
 
 def main():
