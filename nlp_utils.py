@@ -53,6 +53,10 @@ def get_celeba_data_df(data_path=None, limit=200):
     return df
 
 
+def get_project_root():
+    return os.path.abspath(os.path.dirname(__file__))
+
+
 def get_cache_dir() -> str:
     user = getpass.getuser()
     if user == "roeyron":
