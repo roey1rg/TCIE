@@ -9,10 +9,10 @@ import pickle
 import argparse
 from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
 import nlp_utils  # our utils
+from hidden_state_utils import get_reduced_hidden_states_to_store, get_hidden_states
 from nlp_utils import load_model
 
 DATAFRAME_CHUNK_SIZE = 400
-DEVICE = "cuda"
 
 
 QUESTIONS = [
@@ -26,14 +26,6 @@ QUESTIONS = [
 ]
 
 
-def get_reduced_hidden_states_to_store(hidden_states, n_input_tokens):
-    result = []
-    for hidden_states_l in hidden_states[0]:
-        hidden_states_l = hidden_states_l[0][-n_input_tokens:].cpu().detach().numpy()  # (n_input_tokens, 4096)
-        result.append(hidden_states_l)
-    return np.stack(result, axis=0)
-
-
 def get_list_subset(lst, n_parts, part_ind):
     part_size = len(lst) // n_parts
     remainder = len(lst) % n_parts
@@ -43,7 +35,8 @@ def get_list_subset(lst, n_parts, part_ind):
 
 
 def main(n_parts, part, output_dir_path):
-    load_model()
+    processor, model = load_model()
+
     df_data = nlp_utils.get_celeba_data_df(limit=1200)
 
     ddl_inference = defaultdict(list)
@@ -56,15 +49,8 @@ def main(n_parts, part, output_dir_path):
         chunk_ind = 0
         for dp_ind, (_, dp_row) in enumerate(df_data.iterrows()):
             image = Image.open(dp_row.image_path)
-            prompt = f"[INST] <image>\n{question} [/INST]"
-            inputs = processor(prompt, image, return_tensors="pt").to(device)
-            output = model.generate(
-                **inputs, max_new_tokens=100, output_hidden_states=True, return_dict_in_generate=True
-            )
-            hidden_states = output["hidden_states"]
+            hidden_states, input_ids, output_ids = get_hidden_states(image, question, model, processor)
 
-            input_ids = list(inputs["input_ids"][0].detach().cpu().numpy())   # [1, 733, 16289
-            output_ids = list(output["sequences"][0].detach().cpu().numpy())  # [1, 733, 16289, ...
             ddl_inference["question"].append(question)
             ddl_inference["image_id"].append(dp_row.image_id)
             ddl_inference["image_path"].append(dp_row.image_path)
@@ -79,7 +65,7 @@ def main(n_parts, part, output_dir_path):
                 out_file_path = os.path.join(output_dir_path, f"qind_{q_ind:02d}_chunk_{chunk_ind:02d}.pickle")
                 with open(out_file_path, "wb") as f:
                     pickle.dump(df_inference, f)
-                print(f'saved: {out_file_path}')
+                print(f"saved: {out_file_path}")
                 ddl_inference = defaultdict(list)
                 chunk_ind += 1
 

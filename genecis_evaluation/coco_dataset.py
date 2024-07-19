@@ -1,5 +1,3 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-
 from torch.utils.data import Dataset
 import os
 
@@ -14,9 +12,11 @@ from zipfile import ZipFile
 ROOT_PATH = str(pathlib.Path(__file__).parent.parent.absolute())
 COCO_ROOT_DIR = f"{ROOT_PATH}/genecis_evaluation/val2017"
 FOCUS_OBJECT = f"{ROOT_PATH}/genecis_evaluation/annotations/focus_object.json"
+CHANGE_OBJECT = f"{ROOT_PATH}/genecis_evaluation/annotations/change_object.json"
 
 
 def download_coco(root_dir: str):
+    print("Downloading Coco validation dataset")
     coco_zip_url = "http://images.cocodataset.org/zips/val2017.zip"
     with urlopen(coco_zip_url) as zipresp:
         with ZipFile(BytesIO(zipresp.read())) as zfile:
@@ -31,7 +31,7 @@ class COCODataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
 
-    def load_sample(self, sample):
+    def load_sample(self, sample) -> Image.Image:
         val_image_id = sample["val_image_id"]
         fpath = os.path.join(self.root_dir, f"{int(val_image_id):012d}.jpg")
         img = Image.open(fpath)
@@ -53,10 +53,6 @@ class COCOValSubset(COCODataset):
         self.tokenizer = tokenizer
 
     def __getitem__(self, index):
-        """
-        Follow same return signature as CIRRSubset
-        """
-
         sample = self.val_samples[index]
         reference = sample["reference"]
 
@@ -86,8 +82,3 @@ class COCOValSubset(COCODataset):
 if __name__ == "__main__":
     dataset = COCOValSubset(FOCUS_OBJECT)
     y = dataset[22]
-    refe, capt, gal_and_ta, _ = y
-
-    print(capt)
-    refe.show()
-    gal_and_ta[0].show()
