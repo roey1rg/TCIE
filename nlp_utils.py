@@ -6,6 +6,11 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import numpy as np
 import matplotlib as mpl
+import torch
+from transformers import LlavaNextForConditionalGeneration, LlavaNextProcessor
+
+DEVICE = 'cuda'
+
 
 def get_animals_data_df(data_path=None, limit_per_class=10):
     data_path = (
@@ -153,3 +158,15 @@ def set_default_figure_params():
 
     }
     mpl.rcParams.update(params)
+
+
+def load_model(device=DEVICE):
+    cache_dir = get_cache_dir()
+    model_name = "llava-hf/llava-v1.6-mistral-7b-hf"
+    processor = LlavaNextProcessor.from_pretrained(model_name, cache_dir=cache_dir)
+    model = LlavaNextForConditionalGeneration.from_pretrained(
+        model_name, torch_dtype=torch.float16, cache_dir=cache_dir
+    )
+    model.generation_config.pad_token_id = processor.tokenizer.pad_token_id
+    model = model.to(device)
+    return processor, model

@@ -9,9 +9,10 @@ import pickle
 import argparse
 from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
 import nlp_utils  # our utils
-
+from nlp_utils import load_model
 
 DATAFRAME_CHUNK_SIZE = 400
+DEVICE = "cuda"
 
 
 QUESTIONS = [
@@ -42,15 +43,7 @@ def get_list_subset(lst, n_parts, part_ind):
 
 
 def main(n_parts, part, output_dir_path):
-    cache_dir = "/home/dcor/roeyron/.cache/"
-    device = "cuda"
-    model_name = "llava-hf/llava-v1.6-mistral-7b-hf"
-    processor = LlavaNextProcessor.from_pretrained(model_name, cache_dir=cache_dir)
-    model = LlavaNextForConditionalGeneration.from_pretrained(
-        model_name, torch_dtype=torch.float16, cache_dir=cache_dir
-    )
-    model.generation_config.pad_token_id = processor.tokenizer.pad_token_id
-    model = model.to(device)
+    load_model()
     df_data = nlp_utils.get_celeba_data_df(limit=1200)
 
     ddl_inference = defaultdict(list)
