@@ -110,16 +110,19 @@ def get_splits_ids():
     return {'train': all_ids[50:], 'test': all_ids[:50]}
 
 
-def visualize_quintuplet(qn: Quintuplet):
+def visualize_quintuplet(qn: Quintuplet, show=True, save_path=None):
     images = [qn.gamma_image, qn.anchor_image, qn.delta_image]
     images = [img.resize((512, 512)) for img in images]
     rd = qn.raw_data['raw_data']
     texts = [rd['gamma'], rd['anchor'], rd['delta']]
     images = [add_text_to_image(img, txt, font_size=22) for img, txt in zip(images, texts)]
     img = Image.fromarray(np.concatenate(images, axis=1))
-    img = add_text_to_image(img, qn.anchor_gamma_shared_text, vertical_position='bottom', horizontal_position=1/3, alignment='center', font_size=18)
-    img = add_text_to_image(img, qn.anchor_delta_shared_text, vertical_position='bottom', horizontal_position=2/3, alignment='center', font_size=18)
-    display(img)
+    img = add_text_to_image(img, qn.anchor_gamma_shared_text, vertical_position='bottom', horizontal_position=1/3, alignment='center', font_size=22)
+    img = add_text_to_image(img, qn.anchor_delta_shared_text, vertical_position='bottom', horizontal_position=2/3, alignment='center', font_size=22)
+    if save_path is not None:
+        img.convert('RGB').save(save_path)
+    if show:
+        display(img)
 
 
 def visualize_quadruplet(dataset_path, qd_id: QuadrupletId):
@@ -137,10 +140,10 @@ def visualize_quadruplet(dataset_path, qd_id: QuadrupletId):
         p_prompt = rd['delta']
         n_prompt = rd['gamma']
     texts = [f'query\n"{q_prompt}"', f'positive\n"{p_prompt}"', f'negative\n"{n_prompt}"']
-    images = [add_text_to_image(img, txt, font_size=22, wrap_text_width=None) for img, txt in zip(images, texts)]
+    images = [add_text_to_image(img, txt, font_size=30, wrap_text_width=None) for img, txt in zip(images, texts)]
     img = Image.fromarray(np.concatenate(images, axis=1))
     question = qn.anchor_gamma_shared_text if qd_id.which == 'gamma_positive' else qn.anchor_delta_shared_text
-    img = add_text_to_image(img, question, vertical_position='bottom', horizontal_position=1/6, alignment='center', font_size=18)
+    img = add_text_to_image(img, question, vertical_position='bottom', horizontal_position=1/6, alignment='center', font_size=24)
     display(img)
 
 

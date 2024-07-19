@@ -6,11 +6,15 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import numpy as np
 import matplotlib as mpl
+import torch
+from transformers import LlavaNextForConditionalGeneration, LlavaNextProcessor
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 def get_animals_data_df(data_path=None, limit_per_class=10):
     data_path = (
-        data_path
-        or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/nlp_project/animals10/raw-img/"
+        data_path or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/nlp_project/animals10/raw-img/"
     )
     translate = {
         "cane": "dog",
@@ -36,18 +40,13 @@ def get_animals_data_df(data_path=None, limit_per_class=10):
 
 
 def get_celeba_data_df(data_path=None, limit=200):
-    dataset_path = (
-        data_path
-        or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/celeba-dataset"
-    )
+    dataset_path = data_path or "/home/dcor/roeyron/interpretability_multi_hop/patchscopes/code/celeba-dataset"
     eval_path = os.path.join(dataset_path, "list_attr_celeba.csv")
     df = pd.read_csv(eval_path)
     if limit:
         df = df.sample(limit, random_state=42)
     df["image_path"] = df.image_id.apply(
-        lambda image_id: os.path.join(
-            dataset_path, "img_align_celeba/img_align_celeba/", image_id
-        )
+        lambda image_id: os.path.join(dataset_path, "img_align_celeba/img_align_celeba/", image_id)
     )
     df = df[list(df.columns[-1:]) + list(df.columns[:-1])]
     df = df.applymap(lambda x: {-1: False, 1: True}.get(x, x))
@@ -62,7 +61,7 @@ def get_cache_dir() -> str:
 
 
 def wrap(s, max_width):
-    return '\n'.join(textwrap.wrap(s, max_width))
+    return "\n".join(textwrap.wrap(s, max_width))
 
 
 def add_text_to_image(
@@ -73,7 +72,7 @@ def add_text_to_image(
     vertical_position="top",
     horizontal_position=0,
     alignment="left",
-    wrap_text_width=40
+    wrap_text_width=40,
 ):
     if wrap_text_width is not None:
         text = wrap(text, wrap_text_width)
@@ -133,23 +132,34 @@ def add_text_to_image(
 
 
 def get_cos_sim(a, b):
-    a = a.astype('float32')
-    b = b.astype('float32')
-    cos_sim = np.dot(a, b)/(np.linalg.norm(a)*np.linalg.norm(b))
+    a = a.astype("float32")
+    b = b.astype("float32")
+    cos_sim = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
     assert np.isnan(cos_sim).sum() == 0
     return cos_sim
 
 
 def set_default_figure_params():
     params = {
-        'axes.labelsize': 12,
-        'font.size': 12,
-        'legend.fontsize': 12,
-        'xtick.labelsize': 10,
-        'ytick.labelsize': 10,
-        'text.usetex': False,
-        'figure.figsize': [5.5, 5.5],
-        'figure.dpi': 200
-
+        "axes.labelsize": 12,
+        "font.size": 12,
+        "legend.fontsize": 12,
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10,
+        "text.usetex": False,
+        "figure.figsize": [5.5, 5.5],
+        "figure.dpi": 200,
     }
     mpl.rcParams.update(params)
+
+
+def load_model(device=DEVICE):
+    cache_dir = get_cache_dir()
+    model_name = "llava-hf/llava-v1.6-mistral-7b-hf"
+    processor = LlavaNextProcessor.from_pretrained(model_name, cache_dir=cache_dir)
+    model = LlavaNextForConditionalGeneration.from_pretrained(
+        model_name, torch_dtype=torch.float16, cache_dir=cache_dir
+    )
+    model.generation_config.pad_token_id = processor.tokenizer.pad_token_id
+    model = model.to(device)
+    return processor, model
