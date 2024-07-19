@@ -7,7 +7,6 @@ import pandas as pd
 from tqdm.auto import tqdm
 import pickle
 import argparse
-from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
 import nlp_utils  # our utils
 from nlp_utils import load_model
 
@@ -43,21 +42,22 @@ def get_list_subset(lst, n_parts, part_ind):
 
 
 def main(n_parts, part, output_dir_path):
-    load_model()
+    processor, model = load_model()
     df_data = nlp_utils.get_celeba_data_df(limit=1200)
 
-    ddl_inference = defaultdict(list)
 
     question_indices = get_list_subset(list(range(len(QUESTIONS))), n_parts, part)
     pbar = tqdm(total=len(question_indices) * len(df_data), desc="Extract hidden states")
     for q_ind in question_indices:
         question = QUESTIONS[q_ind]
 
+        ddl_inference = defaultdict(list)
+
         chunk_ind = 0
         for dp_ind, (_, dp_row) in enumerate(df_data.iterrows()):
             image = Image.open(dp_row.image_path)
             prompt = f"[INST] <image>\n{question} [/INST]"
-            inputs = processor(prompt, image, return_tensors="pt").to(device)
+            inputs = processor(prompt, image, return_tensors="pt").to(DEVICE)
             output = model.generate(
                 **inputs, max_new_tokens=100, output_hidden_states=True, return_dict_in_generate=True
             )
@@ -74,7 +74,7 @@ def main(n_parts, part, output_dir_path):
             ddl_inference["hidden_states"].append(hidden_states)
             pbar.update()
 
-            if dp_ind % DATAFRAME_CHUNK_SIZE == 0:
+            if (dp_ind > 0) and ((dp_ind % DATAFRAME_CHUNK_SIZE == 0) or (dp_ind == len(df_data)-1)):
                 df_inference = pd.DataFrame(ddl_inference)
                 out_file_path = os.path.join(output_dir_path, f"qind_{q_ind:02d}_chunk_{chunk_ind:02d}.pickle")
                 with open(out_file_path, "wb") as f:
@@ -104,7 +104,8 @@ if __name__ == "__main__":
 
 
 """
-cd patchscopes/code/nlp_project
+cd TCIE
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-python nlp_project/text_conditioned_image_embedding.py
+python extract_embeddings_celeba.py --output_dir /home/dcor/roeyron/TCIE/results/celeba_conditioned_embeddings --n_parts 16 --part 0
+
 """

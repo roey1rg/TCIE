@@ -13,7 +13,20 @@ SLURM_TEMPLATE = """#! /bin/sh
 #SBATCH --gpus=1
 #SBATCH --constraint="geforce_rtx_3090"
 
-/bin/bash
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/dcor/roeyron/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/dcor/roeyron/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/dcor/roeyron/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/dcor/roeyron/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
 
 
 cd /home/dcor/roeyron/TCIE
@@ -25,8 +38,8 @@ echo "(Roey) Python:"
 echo $(which python)
 echo $PYTHONPATH
 
-
-python text_conditioned_image_embedding.py N_PARTS CURRENT_PART
+# python extract_embeddings_celeba.py --output_dir /home/dcor/roeyron/TCIE/results/celeba_conditioned_embeddings --n_parts N_PARTS --part CURRENT_PART
+python extract_embeddings_qard.py --output_dir '/home/dcor/roeyron/TCIE/results/qard_v2_embeddings' --n_parts N_PARTS --part CURRENT_PART
 """
 
 
@@ -49,7 +62,7 @@ def push_to_slurm(n_parts, current_part, experiment_name):
 
 def push_many():
     experiment_name = 'cie'
-    n_parts = 16
+    n_parts = 20
     for part in range(n_parts):
         push_to_slurm(n_parts, part, experiment_name)
 
