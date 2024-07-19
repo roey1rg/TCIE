@@ -39,7 +39,7 @@ echo $(which python)
 echo $PYTHONPATH
 
 # python extract_embeddings_celeba.py --output_dir /home/dcor/roeyron/TCIE/results/celeba_conditioned_embeddings --n_parts N_PARTS --part CURRENT_PART
-python extract_embeddings_qard.py --output_dir '/home/dcor/roeyron/TCIE/results/qard_v2_embeddings' --n_parts N_PARTS --part CURRENT_PART
+python extract_embeddings_qard.py --output_dir '/home/dcor/roeyron/TCIE/results/qard_v3_embeddings_answer_shortly' --n_parts N_PARTS --part CURRENT_PART
 """
 
 

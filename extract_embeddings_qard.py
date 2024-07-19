@@ -19,8 +19,6 @@ DEVICE = 'cuda'
 GENERAL_QUESTION = 'Describe the image, answer shortly'
 
 
-
-
 def get_list_subset(lst, n_parts, part_ind):
     part_size = len(lst) // n_parts
     remainder = len(lst) % n_parts
@@ -41,12 +39,11 @@ def extract_embeddings(n_parts, part, output_dir_path):
         qd = load_quadruplet(QUINTUPLETS_DATASET_PATH, qd_id)
         question = qd.prompt
 
-        for question_type, question in [('origina', qd.prompt), ('general', GENERAL_QUESTION)]:
+        for question_type, question in [('original', qd.prompt), ('general', GENERAL_QUESTION)]:
             for image_type in ['query', 'positive', 'negative']:
                 image = getattr(qd, image_type)
-                hidden_states, input_ids, output_ids = get_hidden_states(image, question, model, processor)
+                hidden_states, input_ids, output_ids = get_hidden_states(image, question + '. answer shortly with a few words.', model, processor)
                 # hidden states
-                hidden_states = get_reduced_hidden_states_to_store(hidden_states, len(input_ids))
                 ddl_inference["hidden_states"].append(hidden_states)
                 ddl_inference["input_ids"].append(input_ids)
                 ddl_inference["output_ids"].append(output_ids)
@@ -94,4 +91,13 @@ if __name__ == "__main__":
 cd TCIE
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python extract_embeddings_qard.py --output_dir '/home/dcor/roeyron/TCIE/results/qard_v2_embeddings/'
+
+
+answer shortly
+    baseline 0.75
+    ours ?
+regular
+    baseline 0.7
+    ours 0.7
+
 """
