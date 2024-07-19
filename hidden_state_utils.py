@@ -1,7 +1,11 @@
+import pathlib
+
 import numpy as np
 from PIL import Image
 
 from nlp_utils import DEVICE
+
+ROOT_PATH = str(pathlib.Path(__file__).parent.absolute())
 
 
 def get_reduced_hidden_states_to_store(hidden_states, n_input_tokens):

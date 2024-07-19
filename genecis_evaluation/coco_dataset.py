@@ -9,7 +9,8 @@ from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
 
-ROOT_PATH = str(pathlib.Path(__file__).parent.parent.absolute())
+from hidden_state_utils import ROOT_PATH
+
 COCO_ROOT_DIR = f"{ROOT_PATH}/genecis_evaluation/val2017"
 FOCUS_OBJECT = f"{ROOT_PATH}/genecis_evaluation/annotations/focus_object.json"
 CHANGE_OBJECT = f"{ROOT_PATH}/genecis_evaluation/annotations/change_object.json"
