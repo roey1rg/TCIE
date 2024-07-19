@@ -39,7 +39,6 @@ def main(n_parts, part, output_dir_path):
 
     df_data = nlp_utils.get_celeba_data_df(limit=1200)
 
-
     question_indices = get_list_subset(list(range(len(QUESTIONS))), n_parts, part)
     pbar = tqdm(total=len(question_indices) * len(df_data), desc="Extract hidden states")
     for q_ind in question_indices:
