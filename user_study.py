@@ -54,6 +54,7 @@ def get_hidden_nearest_neighbors(df: pd.DataFrame, sampled_indices: list[int]) -
         distances, indices = neighbors.kneighbors([token])
         distances, indices = distances[0, :], indices[0, :]
         results.append(indices)
+        print(f"Hidden states Appended {results[-1]}")
     return results
 
 
@@ -69,22 +70,27 @@ def get_clip_image_text_similarity(image, text):
     return sim
 
 
-def get_clip_indices(df: pd.DataFrame, descriptions: dict) -> list[list[int]]:
+def get_clip_indices(df: pd.DataFrame, descriptions: dict, sampled_indices: list[int]) -> list[list[int]]:
     print("Calculating CLIP results")
 
     results = []
-    for image_id, desc in tqdm(descriptions.items()):
-        reference_image_index = df[df["image_id"] == image_id].index.tolist()
+    for sampled_index in tqdm(sampled_indices):
+        desc = descriptions[df.loc[sampled_index]["image_id"]]
         scores = []
         for dp_ind, dp_row in df.iterrows():
-            image = dp_row["image_path"]
+            image = Image.open(dp_row["image_path"])
             scores.append(get_clip_image_text_similarity(image, desc))
-        results.append(reference_image_index + np.argsort(scores)[-K:])
+        results.append([sampled_index] + list(np.argsort(scores)[-K:]))
+        print(f"original scores : {list(np.argsort(scores)[-K:])}")
+        print(f"CLIP Appended {results[-1]}")
     return results
 
 
 def get_question_results(question_index: int):
     df = load_hidden_question_df(question_index)
+    df.reset_index(drop=True, inplace=True)
+    print("Df indices are: ", df.index)
+    print("Df len is: ", len(df))
     question = re.sub("[^0-9a-zA-Z]+", "_", df.iloc[0]["question"])
     question_dir = f"{IMAGES_RESULTS_PATH}/{question}"
 
@@ -94,11 +100,11 @@ def get_question_results(question_index: int):
     sampled_indices = df[df["image_id"].isin(descriptions.keys())].index
     print("sampled_indices", sampled_indices)
     sampled_nearest_indices = get_hidden_nearest_neighbors(df, sampled_indices)
-    sampled_clip_indices = get_clip_indices(df, sampled_indices)
-    for i, nearest_indices in enumerate(sampled_nearest_indices):
-        hidden_images = [Image.open(df["image_path"].iloc[index]) for index in sampled_nearest_indices]
+    sampled_clip_indices = get_clip_indices(df, descriptions, sampled_indices)
+    for i, (nearest_indices, clip_indices) in enumerate(zip(sampled_nearest_indices, sampled_clip_indices)):
+        hidden_images = [Image.open(df["image_path"].loc[index]) for index in nearest_indices]
         hidden_result = np.concatenate([img.resize((180, 180)) for img in hidden_images], axis=1)
-        clip_images = [Image.open(df["image_path"].iloc[index]) for index in sampled_clip_indices]
+        clip_images = [Image.open(df["image_path"].loc[index]) for index in clip_indices]
         clip_result = np.concatenate([img.resize((180, 180)) for img in clip_images], axis=1)
         result_image = Image.fromarray(np.concatenate([hidden_result, clip_result], axis=0))
         if not os.path.isdir(question_dir):
