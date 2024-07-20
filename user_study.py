@@ -117,4 +117,3 @@ if __name__ == "__main__":
 
     for i in [0, 1, 2, 3, 4, 6]:
         get_question_results(i)
-        break
