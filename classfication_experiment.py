@@ -73,17 +73,16 @@ def train_classifiers_and_get_accuracies(ddl_inference, y, token_locs, layers):
 def main(limit_per_class=50):
     processor, model = load_model()
     df_data = get_animals_data_df(limit_per_class=limit_per_class)
-    results_dir_path = "/home/dcor/roeyron/TCIE/results/classification_experiment"
+    results_dir_path = "/home/dcor/roeyron/TCIE/results/classification_experiment_fix_layers"
     if not os.path.exists(results_dir_path):
         os.mkdir(results_dir_path)
 
     for question in QUESTIONS:
         ddl_inference, input_ids = extract_hidden_states(processor, model, df_data, question)
-        n_layers = get_n_layers(model)
         class_names = sorted(list(df_data.class_name.unique()))
         labels = df_data.class_name.apply(lambda name: class_names.index(name)).to_list()
         token_locs = list(range(-len(input_ids), 0))
-        layers = list(range(n_layers))
+        layers = list(range(1, 33))
         df_acc = train_classifiers_and_get_accuracies(ddl_inference, labels, token_locs, layers)
 
         token_locs = df_acc.token_loc.unique()

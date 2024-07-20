@@ -45,3 +45,4 @@ echo $PYTHONPATH
 # llava.py
 
 jupyter lab --no-browser --port=5700 --ip=0.0.0.0
+# python classfication_experiment.py

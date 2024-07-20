@@ -109,7 +109,7 @@ def get_splits_ids():
     json_path = os.path.join(get_project_root(), 'train_test_split_ids.json')
     with open(json_path, 'r') as file:
         splits_ids = json.load(file)
-    return splits_ids
+    return {k: [int(e) for e in v] for k, v in splits_ids.items()}
     # all_ids = sorted(os.listdir(QUINTUPLETS_DATASET_PATH))
     # return {'train': all_ids[50:], 'test': all_ids[:50]}
 

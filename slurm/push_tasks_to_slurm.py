@@ -38,8 +38,8 @@ echo "(Roey) Python:"
 echo $(which python)
 echo $PYTHONPATH
 
-# python extract_embeddings_celeba.py --output_dir /home/dcor/roeyron/TCIE/results/celeba_conditioned_embeddings --n_parts N_PARTS --part CURRENT_PART
-python extract_embeddings_qard.py --output_dir '/home/dcor/roeyron/TCIE/results/qard_v3_embeddings_answer_shortly' --n_parts N_PARTS --part CURRENT_PART
+# python extract_embeddings_celeba.py --output_dir /home/dcor/roeyron/TCIE/results/celeba_conditioned_embeddings_large --n_parts N_PARTS --part CURRENT_PART
+python extract_embeddings_qard.py --output_dir '/home/dcor/roeyron/TCIE/results/qard_v4_embeddings_wo_answer_shortly' --n_parts N_PARTS --part CURRENT_PART
 """
 
 
@@ -61,8 +61,8 @@ def push_to_slurm(n_parts, current_part, experiment_name):
 
 
 def push_many():
-    experiment_name = 'cie'
-    n_parts = 20
+    experiment_name = 'celebaLarge'
+    n_parts = 10
     for part in range(n_parts):
         push_to_slurm(n_parts, part, experiment_name)
 

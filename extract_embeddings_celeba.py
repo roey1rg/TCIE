@@ -22,6 +22,9 @@ QUESTIONS = [
     "look on the lips of the person in the image",
     "describe the shirt of the person in the image",
     "describe the nose of the person in the image",
+    "describe the eyes of the person in the image",
+    "What is the mouth of the person",
+    "describe the ears of the person"
 ]
 
 
@@ -37,7 +40,7 @@ def main(n_parts, part, output_dir_path):
     processor, model = load_model()
     processor, model = load_model()
 
-    df_data = nlp_utils.get_celeba_data_df(limit=1200)
+    df_data = nlp_utils.get_celeba_data_df(limit=6000)
 
     question_indices = get_list_subset(list(range(len(QUESTIONS))), n_parts, part)
     pbar = tqdm(total=len(question_indices) * len(df_data), desc="Extract hidden states")
