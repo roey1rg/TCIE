@@ -9,7 +9,7 @@ from tqdm import tqdm
 import numpy as np
 from nlp_utils import add_text_to_image
 from IPython.display import display
-
+from nlp_utils import get_project_root
 
 QUINTUPLETS_DATASET_PATH = '/home/dcor/roeyron/datasets/quintuplets_v1'
 
@@ -103,11 +103,15 @@ class Quintuplet:
             )
         else:
             raise ValueError()
-        
+
 
 def get_splits_ids():
-    all_ids = sorted(os.listdir(QUINTUPLETS_DATASET_PATH))
-    return {'train': all_ids[50:], 'test': all_ids[:50]}
+    json_path = os.path.join(get_project_root(), 'train_test_split_ids.json')
+    with open(json_path, 'r') as file:
+        splits_ids = json.load(file)
+    return splits_ids
+    # all_ids = sorted(os.listdir(QUINTUPLETS_DATASET_PATH))
+    # return {'train': all_ids[50:], 'test': all_ids[:50]}
 
 
 def visualize_quintuplet(qn: Quintuplet, show=True, save_path=None):
