@@ -1,11 +1,13 @@
 import json
 import pickle
-import random
+import clip
 import re
 import os
 
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
 
 from PIL import Image
 from sklearn.neighbors import NearestNeighbors
@@ -55,28 +57,58 @@ def get_hidden_nearest_neighbors(df: pd.DataFrame, sampled_indices: list[int]) -
     return results
 
 
+def get_clip_image_text_similarity(image, text):
+    image_processed = clip_preprocess(image).unsqueeze(0).to(nlp_utils.DEVICE)
+    text_tokenized = clip.tokenize([text]).to(nlp_utils.DEVICE)
+    with torch.no_grad():
+        image_features = clip_model.encode_image(image_processed)
+        text_features = clip_model.encode_text(text_tokenized)
+    cos = nn.CosineSimilarity(dim=0)
+    sim = cos(image_features[0], text_features[0]).item()
+    sim = (sim + 1) / 2
+    return sim
+
+
+def get_clip_indices(df: pd.DataFrame, descriptions: dict) -> list[list[int]]:
+    print("Calculating CLIP results")
+
+    results = []
+    for image_id, desc in tqdm(descriptions.items()):
+        reference_image_index = df[df["image_id"] == image_id].index.tolist()
+        scores = []
+        for dp_ind, dp_row in df.iterrows():
+            image = dp_row["image_path"]
+            scores.append(get_clip_image_text_similarity(image, desc))
+        results.append(reference_image_index + np.argsort(scores)[-K:])
+    return results
+
+
 def get_question_results(question_index: int):
     df = load_hidden_question_df(question_index)
     question = re.sub("[^0-9a-zA-Z]+", "_", df.iloc[0]["question"])
     question_dir = f"{IMAGES_RESULTS_PATH}/{question}"
 
     print(f"Loaded DF for {question}")
-    with open(f"{question_dir}/descriptions.json", "e") as f:
+    with open(f"{question_dir}/descriptions.json", "r") as f:
         descriptions = json.load(f)
     sampled_indices = df[df["image_id"].isin(descriptions.keys())].index
+    print("sampled_indices", sampled_indices)
     sampled_nearest_indices = get_hidden_nearest_neighbors(df, sampled_indices)
+    sampled_clip_indices = get_clip_indices(df, sampled_indices)
     for i, nearest_indices in enumerate(sampled_nearest_indices):
-        images = [Image.open(df["image_path"].iloc[index]) for index in nearest_indices]
-        hidden_result = np.concatenate([img.resize((180, 180)) for img in images], axis=1)
-        clip_result = np.concatenate([img.resize((180, 180)) for img in images], axis=1)
+        hidden_images = [Image.open(df["image_path"].iloc[index]) for index in sampled_nearest_indices]
+        hidden_result = np.concatenate([img.resize((180, 180)) for img in hidden_images], axis=1)
+        clip_images = [Image.open(df["image_path"].iloc[index]) for index in sampled_clip_indices]
+        clip_result = np.concatenate([img.resize((180, 180)) for img in clip_images], axis=1)
         result_image = Image.fromarray(np.concatenate([hidden_result, clip_result], axis=0))
         if not os.path.isdir(question_dir):
             os.makedirs(question_dir)
         result_image.save(f"{question_dir}/result_{i}.jpg")
-    # clip_model, clip_preprocess = clip.load("ViT-B/32", device=nlp_utils.DEVICE)
 
 
 if __name__ == "__main__":
-    for i in tqdm([0, 1, 2, 3, 4, 6]):
+    clip_model, clip_preprocess = clip.load("ViT-B/32", device=nlp_utils.DEVICE)
+
+    for i in [0, 1, 2, 3, 4, 6]:
         get_question_results(i)
         break
