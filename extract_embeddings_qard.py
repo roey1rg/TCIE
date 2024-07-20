@@ -16,7 +16,7 @@ CHUNKS_SIZE = 5
 DEVICE = 'cuda'
 
 
-GENERAL_QUESTION = 'Describe the image, answer shortly'
+GENERAL_QUESTION = 'Describe the image'
 
 
 def get_list_subset(lst, n_parts, part_ind):
@@ -73,8 +73,7 @@ def main():
     args = parser.parse_args()
 
     output_dir_path = args.output_dir_path
-    if not os.path.exists(output_dir_path):
-        os.mkdir(output_dir_path)
+    os.makedirs(output_dir_path, exist_ok=True)
 
     n_parts = args.n_parts
     part = args.part
