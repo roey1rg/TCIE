@@ -55,8 +55,3 @@ if __name__ == "__main__":
     print("Loading celeb_a dataset")
     celeb_a_df = nlp_utils.get_celeba_data_df(data_path=f"{ROOT_PATH}/celeb_a_dataset", limit=1200)
     main()
-    # with open("celeb_a_image_ids.json", "r") as f:
-    #     celeb_image_ids = json.load(f)
-
-    # with open(results_path, "wb") as f:
-    #     pickle.dump(clip_embeddings_df, f)
