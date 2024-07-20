@@ -1,4 +1,4 @@
-import os
+import json
 import pickle
 import random
 import re
@@ -11,6 +11,7 @@ from PIL import Image
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
+import nlp_utils
 from hidden_state_utils import ROOT_PATH
 
 results_dir = "/home/dcor/roeyron/TCIE/results/celeba_conditioned_embeddings"
@@ -18,7 +19,7 @@ IMAGES_RESULTS_PATH = f"{ROOT_PATH}/celeb_a_results"
 
 results_fnames = sorted(os.listdir(results_dir), key=lambda name: int(name.split("_")[1].split(".")[0]))
 results_fpaths = [os.path.join(results_dir, fname) for fname in results_fnames]
-LAYER_INDEX = 18
+LAYER_INDEX = 15
 TOKEN_INDEX = -1
 K = 5
 SAMPLES_PER_QUESTION = 10
@@ -40,9 +41,8 @@ def load_hidden_question_df(index: int):
     return pd.concat(data_frames)
 
 
-def get_hidden_nearest_neighbors(df: pd.DataFrame) -> list[list[int]]:
+def get_hidden_nearest_neighbors(df: pd.DataFrame, sampled_indices: list[int]) -> list[list[int]]:
     print("Calculating Nearest Neighbors")
-    sampled_indices = random.sample(range(len(df)), SAMPLES_PER_QUESTION)
     results = []
     hidden_tokens = np.array([hs[LAYER_INDEX][TOKEN_INDEX] for hs in df["hidden_states"]])
     neighbors = NearestNeighbors(n_neighbors=K + 1, metric="cosine")
@@ -55,20 +55,28 @@ def get_hidden_nearest_neighbors(df: pd.DataFrame) -> list[list[int]]:
     return results
 
 
-def get_hidden_question_results(question_index: int):
+def get_question_results(question_index: int):
     df = load_hidden_question_df(question_index)
     question = re.sub("[^0-9a-zA-Z]+", "_", df.iloc[0]["question"])
+    question_dir = f"{IMAGES_RESULTS_PATH}/{question}"
+
     print(f"Loaded DF for {question}")
-    sampled_nearest_indices = get_hidden_nearest_neighbors(df)
+    with open(f"{question_dir}/descriptions.json", "e") as f:
+        descriptions = json.load(f)
+    sampled_indices = df[df["image_id"].isin(descriptions.keys())].index
+    sampled_nearest_indices = get_hidden_nearest_neighbors(df, sampled_indices)
     for i, nearest_indices in enumerate(sampled_nearest_indices):
         images = [Image.open(df["image_path"].iloc[index]) for index in nearest_indices]
-        result_image = Image.fromarray(np.concatenate([img.resize((180, 180)) for img in images], axis=1))
-        question_dir = f"{IMAGES_RESULTS_PATH}/{question}"
+        hidden_result = np.concatenate([img.resize((180, 180)) for img in images], axis=1)
+        clip_result = np.concatenate([img.resize((180, 180)) for img in images], axis=1)
+        result_image = Image.fromarray(np.concatenate([hidden_result, clip_result], axis=0))
         if not os.path.isdir(question_dir):
             os.makedirs(question_dir)
         result_image.save(f"{question_dir}/result_{i}.jpg")
+    # clip_model, clip_preprocess = clip.load("ViT-B/32", device=nlp_utils.DEVICE)
 
 
 if __name__ == "__main__":
-    for i in tqdm(range(7)):
-        get_hidden_question_results(i)
+    for i in tqdm([0, 1, 2, 3, 4, 6]):
+        get_question_results(i)
+        break

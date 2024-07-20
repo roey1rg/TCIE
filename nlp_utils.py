@@ -153,8 +153,8 @@ def set_default_figure_params():
     mpl.rcParams.update(params)
 
 
-def load_model(device=DEVICE):
-    cache_dir = get_cache_dir()
+def load_model(device=DEVICE, cache_dir=None):
+    cache_dir = cache_dir or get_cache_dir()
     model_name = "llava-hf/llava-v1.6-mistral-7b-hf"
     processor = LlavaNextProcessor.from_pretrained(model_name, cache_dir=cache_dir)
     model = LlavaNextForConditionalGeneration.from_pretrained(
